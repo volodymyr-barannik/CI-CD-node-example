@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+spec:                   # The desired state of the deployment
+  replicas: 3           # We want to have 3 replicas
+  selector:             # The labels used to select which pods the deployment manages.
+    matchLabels:         
+      app: hello-world  # The deployment will manage pods that have a label with key 'app' and value 'hello-world'
+  template:             # The specification for the PODS to run.
+    metadata:           
+      labels:           
+        app: hello-world    # We give a label with key 'app' and value 'hello-world' to created pods
+    spec:               
+      containers:       # The specification for the CONTAINERS to run.
+        - name: nodejs  # The container has a name 'nodejs'
+          image: vbarannik/cicd:latest   # The Docker image to use for the container
+          ports:
+            - containerPort: 3000
+        - name: nginx   # Another container, now it has name nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          livenessProbe:    # That's a cool feature. It allows us to check the health of the container (whether it's running correctly)
+            httpGet:        # So we basically send the GET request to the '/'
+              path: /
+              port: 3000
+            initialDelaySeconds: 15 # And that probe is gonna be performed after 15sec after start
+            timeoutSeconds: 1       # If unable to receive a response in 1 sec, then the health of the container is not ok
+          volumeMounts:             # The volumes to mount in the container
+            - name: nginx-conf      
+              mountPath: /etc/nginx/nginx.conf  # The path inside the CONTAINER to mount the volume
+              subPath: nginx.conf               # The subpath inside the VOLUME to mount
+      volumes:                  # The volumes to make available to the containers
+        - name: nginx-conf
+          configMap:            # A configMap volume that contains configuration data
+            name: nginx-conf
